@@ -100,10 +100,13 @@
 // MAIN CONFIGURATION SWITCHES FOR FEATURES - IS_3D and IS_DUAL_Z are not compatible with each other!!
 // ctrl+/ with your cursor on a line will comment / uncomment that line.
 #define HAS_BLTOUCH               // uncomment if you have a BLTouch or clone
+//#define HAS_PROX_SENSOR           // uncomment if you are using a proximity sensor
 // #define HAS_WIFI                  // uncomment if you have wifi module installed, NOT WORKING YET!
+#define HAS_PI                    // uncomment if you want to connect a Pi-type device to the serial UART under the wifi socket
 // #define IS_3D                     // uncomment if you have dual extruders, Requires a TMC2208 driver in the empty socket.
 #define IS_DUAL_Z                 // uncomment if you have dual independent Z, Requires a TMC2208 driver in the empty socket.
-#define NO_NOZZLE_PREHEAT         // uncomment if you don't want the nozzle to pre-heat for leveling. RECOMMENDED Enabled.
+#define HAS_EFIT                  // uncomment if you've installed the Creality E-Fit extruder
+#define NO_NOZZLE_PREHEAT         // uncomment if you don't want the nozzle to pre-heat for leveling. RECOMMENDED Enabled
 
 #if ENABLED(IS_DUAL_Z)
   #define Z2_ENABLE_PIN  E1_ENABLE_PIN
@@ -145,7 +148,7 @@
  * Currently Ethernet (-2) is only supported on Teensy 4.1 boards.
  * :[-2, -1, 0, 1, 2, 3, 4, 5, 6, 7]
  */
-#if ENABLED(HAS_WIFI)
+#if ENABLED(HAS_WIFI) || ENABLED(HAS_PI) 
   #define SERIAL_PORT_2 2
   #define BAUDRATE_2 115200   // Enable to override BAUDRATE
 #endif
@@ -977,8 +980,10 @@
  */
 #if ENABLED(IS_3D)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 134, 134 }
-#else
+#elif ENABLED(HAS_EFIT)
   #define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 418 }
+#else
+  #define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 134 }
 #endif
 
 /**
@@ -988,9 +993,9 @@
  */
 //3--------
 #if ENABLED(IS_3D)
-  #define DEFAULT_MAX_FEEDRATE          { 200, 200, 8, 70, 70 }
+  #define DEFAULT_MAX_FEEDRATE          { 200, 200, 10, 70, 70 }
 #else  
-  #define DEFAULT_MAX_FEEDRATE          { 200, 200, 8, 60 }  //1------最高速度
+  #define DEFAULT_MAX_FEEDRATE          { 200, 200, 20, 30 }  //1------最高速度
 #endif  
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
@@ -1132,7 +1137,7 @@
  * A Fix-Mounted Probe either doesn't deploy or needs manual deployment.
  *   (e.g., an inductive probe or a nozzle-based probe-switch.)
  */
-#if NONE(HAS_BLTOUCH)
+#if NONE(HAS_BLTOUCH) || ENABLED(HAS_PROX_SENSOR)
   #define FIX_MOUNTED_PROBE
 #endif
 
@@ -1245,17 +1250,17 @@
  *     |    [-]    |
  *     O-- FRONT --+
  */
-#if ENABLED(HAS_BLTOUCH)
-  #define NOZZLE_TO_PROBE_OFFSET { 0, -35, 3 } //was 32.55, 3, 0 - P.T.
+#if ENABLED(HAS_BLTOUCH) || ENABLED(HAS_PROX_SENSOR)
+  #define NOZZLE_TO_PROBE_OFFSET { 47.75, -7, 0 } // my setup - P.T.
 #else
-  #define NOZZLE_TO_PROBE_OFFSET { 0, 0, 0.1 } //strain gauge offset
+  #define NOZZLE_TO_PROBE_OFFSET { 0, 0, 0.2 } //strain gauge original offset
 #endif
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
 //2----------探测更边上的范围
-#if ENABLED(HAS_BLTOUCH)
-  #define PROBING_MARGIN 25 
+#if ENABLED(HAS_BLTOUCH) || ENABLED(HAS_PROX_SENSOR)
+  #define PROBING_MARGIN 10 
 #else
   #define PROBING_MARGIN 10
 #endif
@@ -1264,15 +1269,15 @@
 #define XY_PROBE_FEEDRATE (12000)
 
 // Feedrate (mm/min) for the first approach when double-probing (MULTIPLE_PROBING == 2)//
-#if ENABLED(HAS_BLTOUCH)
-  #define Z_PROBE_FEEDRATE_FAST (200) 
+#if ENABLED(HAS_BLTOUCH) || ENABLED(HAS_PROX_SENSOR)
+  #define Z_PROBE_FEEDRATE_FAST (1200) //200 P.T.
 #else
   #define Z_PROBE_FEEDRATE_FAST (100) //1.2*60 Original - P.T.
 #endif
 
 // Feedrate (mm/min) for the "accurate" probe of each point//
-#if ENABLED(HAS_BLTOUCH)
-  #define Z_PROBE_FEEDRATE_SLOW (Z_PROBE_FEEDRATE_FAST / 2) 
+#if ENABLED(HAS_BLTOUCH) || ENABLED(HAS_PROX_SENSOR)
+  #define Z_PROBE_FEEDRATE_SLOW (Z_PROBE_FEEDRATE_FAST / 4) 
 #else
   #define Z_PROBE_FEEDRATE_SLOW (Z_PROBE_FEEDRATE_FAST / 4) //Z_PROBE_FEEDRATE_FAST / 3
 #endif
@@ -1298,7 +1303,7 @@
  */
 
 //2--------使用去皮，更灵活配合使用调平传感器
-#if NONE(HAS_BLTOUCH)
+#if NONE(HAS_BLTOUCH) && NONE(HAS_PROX_SENSOR)
   #define PROBE_TARE
 #endif
 #if ENABLED(PROBE_TARE)
@@ -1330,7 +1335,7 @@
  * A total of 2 does fast/slow probes with a weighted average.
  * A total of 3 or more adds more slow probes, taking the average.
  */
-#define MULTIPLE_PROBING 2
+// #define MULTIPLE_PROBING 2 // was enabled P.T.
 //#define EXTRA_PROBING    1
 
 /**
@@ -1350,12 +1355,15 @@
 
 //3--------比较合理的调平间距
 #define Z_CLEARANCE_DEPLOY_PROBE      5 // Z Clearance for Deploy/Stow
-#if NONE(HAS_BLTOUCH)
-  #define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
-  #define Z_CLEARANCE_MULTI_PROBE     1 // Z Clearance between multiple probes
-#else  
+#if ENABLED(HAS_BLTOUCH)
   #define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points
   #define Z_CLEARANCE_MULTI_PROBE     5 // Z Clearance between multiple probes
+#elif ENABLED(HAS_PROX_SENSOR)
+  #define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
+  #define Z_CLEARANCE_MULTI_PROBE     2 // Z Clearance between multiple probes
+#else  
+  #define Z_CLEARANCE_BETWEEN_PROBES  5 // Z Clearance between probe points
+  #define Z_CLEARANCE_MULTI_PROBE     2 // Z Clearance between multiple probes
 #endif
 //#define Z_AFTER_PROBING             5 // Z position after probing is done
 
@@ -3119,4 +3127,8 @@
 
 #if ENABLED(IS_3D) && ENABLED(IS_DUAL_Z)
   #error "You cannot have both IS_3D and IS_DUAL_Z enabled at the same time."
+#endif
+
+#if ENABLED(HAS_BLTOUCH) && ENABLED(HAS_PROX_SENSOR)
+  #error "You can only have one ABL sensor"
 #endif
